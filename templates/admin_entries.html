@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Gesamtliste – Selbsthilfe-Stunden{% endblock %}
+{% block content %}
+<h1>Gesamtliste (Admin)</h1>
+
+<form method="get" class="card filter-form">
+  <div class="field">
+    <label for="von">Datum von</label>
+    <input type="date" id="von" name="von" value="{{ datum_von }}">
+  </div>
+  <div class="field">
+    <label for="bis">Datum bis</label>
+    <input type="date" id="bis" name="bis" value="{{ datum_bis }}">
+  </div>
+  <button type="submit" class="btn">Filtern</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin_entries') }}">Zurücksetzen</a>
+</form>
+
+<div class="totals">
+  <div class="total-box">
+    <div class="label">Einträge</div>
+    <div class="value">{{ totals['anzahl'] }}</div>
+  </div>
+  <div class="total-box">
+    <div class="label">Stunden gesamt</div>
+    <div class="value">{{ totals['stunden']|stunden_fmt }}</div>
+  </div>
+  <div class="total-box">
+    <div class="label">Vergütung gesamt</div>
+    <div class="value">{{ totals['summe']|euro }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Alle Einträge</h2>
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Benutzer</th>
+          <th>Wohnung</th>
+          <th>Art</th>
+          <th>Tätigkeit</th>
+          <th>Datum</th>
+          <th>Datum Anerkennung</th>
+          <th class="num">Stunden</th>
+          <th class="num">Vergütung/h</th>
+          <th class="num">Summe Vergütung</th>
+          <th>Kommentar</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row['user_name'] }}</td>
+          <td>{{ row['wohnung'] }}</td>
+          <td>{{ row['art'] }}</td>
+          <td>{{ row['taetigkeit'] }}</td>
+          <td>{{ row['datum'] }}</td>
+          <td>
+            {% if row['datum_anerkennung'] %}
+              <span class="badge badge-ok">{{ row['datum_anerkennung'] }}</span>
+            {% else %}
+              <span class="badge badge-pending">offen</span>
+            {% endif %}
+          </td>
+          <td class="num">{{ row['stunden']|stunden_fmt }}</td>
+          <td class="num">{{ row['verguetung_je_stunde']|euro }}</td>
+          <td class="num"><strong>{{ (row['stunden'] * row['verguetung_je_stunde'])|euro }}</strong></td>
+          <td>{{ row['kommentar'] or '' }}</td>
+          <td>
+            <div class="inline-form">
+              <form method="post" action="{{ url_for('set_anerkennung', entry_id=row['id']) }}" class="inline-form">
+                <input type="hidden" name="datum_anerkennung" value="{{ row['datum'] }}">
+                <button type="submit" class="btn btn-success btn-small" title="Anerkennung mit Eintragsdatum setzen">Anerkennen</button>
+              </form>
+              <form method="post" action="{{ url_for('set_anerkennung', entry_id=row['id']) }}" class="inline-form">
+                <input type="date" name="datum_anerkennung" value="{{ row['datum_anerkennung'] or row['datum'] }}" required>
+                <button type="submit" class="btn btn-small">Datum setzen</button>
+              </form>
+              {% if row['datum_anerkennung'] %}
+              <form method="post" action="{{ url_for('remove_anerkennung', entry_id=row['id']) }}" class="inline-form">
+                <button type="submit" class="btn btn-secondary btn-small">Entfernen</button>
+              </form>
+              {% endif %}
+              <form method="post" action="{{ url_for('delete_entry', entry_id=row['id']) }}" class="inline-form"
+                    onsubmit="return confirm('Diesen Eintrag löschen?');">
+                <button type="submit" class="btn btn-danger btn-small">Löschen</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="6">Summe</th>
+          <th class="num">{{ totals['stunden']|stunden_fmt }}</th>
+          <th></th>
+          <th class="num">{{ totals['summe']|euro }}</th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Keine Einträge im gewählten Zeitraum.</p>
+  {% endif %}
+</div>
+{% endblock %}

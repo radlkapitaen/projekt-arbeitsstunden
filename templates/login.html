@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Anmelden – Selbsthilfe-Stunden{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h2>Anmelden</h2>
+  <form method="post">
+    <div class="field">
+      <label for="email">E-Mail</label>
+      <input type="email" id="email" name="email" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Passwort</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn">Anmelden</button>
+  </form>
+  <p class="muted">Noch kein Konto? <a href="{{ url_for('register') }}">Jetzt registrieren</a></p>
+</div>
+{% endblock %}

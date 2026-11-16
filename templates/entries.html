@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Meine Einträge – Selbsthilfe-Stunden{% endblock %}
+{% block content %}
+<h1>Meine Einträge</h1>
+
+<form method="get" class="card filter-form">
+  <div class="field">
+    <label for="von">Datum von</label>
+    <input type="date" id="von" name="von" value="{{ datum_von }}">
+  </div>
+  <div class="field">
+    <label for="bis">Datum bis</label>
+    <input type="date" id="bis" name="bis" value="{{ datum_bis }}">
+  </div>
+  <button type="submit" class="btn">Filtern</button>
+  <a class="btn btn-secondary" href="{{ url_for('entries') }}">Zurücksetzen</a>
+</form>
+
+<div class="totals">
+  <div class="total-box">
+    <div class="label">Einträge</div>
+    <div class="value">{{ totals['anzahl'] }}</div>
+  </div>
+  <div class="total-box">
+    <div class="label">Stunden gesamt</div>
+    <div class="value">{{ totals['stunden']|stunden_fmt }}</div>
+  </div>
+  <div class="total-box">
+    <div class="label">Vergütung gesamt</div>
+    <div class="value">{{ totals['summe']|euro }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Neuen Eintrag anlegen</h2>
+  <form method="post" action="{{ url_for('create_entry') }}" id="new-entry-form">
+    <input type="hidden" name="von" value="{{ datum_von }}">
+    <input type="hidden" name="bis" value="{{ datum_bis }}">
+    <div class="grid-3">
+      <div class="field">
+        <label for="wohnung">Wohnung</label>
+        <input type="text" id="wohnung" name="wohnung" value="{{ current_user()['wohnung'] or '' }}" required>
+      </div>
+      <div class="field">
+        <label for="art">Art</label>
+        <select id="art" name="art" required>
+          <option value="">– bitte wählen –</option>
+          {% for art in art_tatigkeit %}
+          <option value="{{ art }}">{{ art }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="taetigkeit">Tätigkeit</label>
+        <select id="taetigkeit" name="taetigkeit" required>
+          <option value="">– zuerst Art wählen –</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="taetigkeit-sonstiges-wrap" style="display:none;">
+      <label for="taetigkeit_sonstiges">Tätigkeit (eigene Angabe)</label>
+      <input type="text" id="taetigkeit_sonstiges" name="taetigkeit_sonstiges">
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label for="datum">Datum</label>
+        <input type="date" id="datum" name="datum" required>
+      </div>
+      <div class="field">
+        <label for="stunden">Stunden</label>
+        <input type="number" id="stunden" name="stunden" step="0.25" min="0.25" required>
+      </div>
+      <div class="field">
+        <label for="verguetung_je_stunde">Vergütung je Stunde (€)</label>
+        <input type="number" id="verguetung_je_stunde" name="verguetung_je_stunde" step="0.01" min="0" value="{{ default_verguetung }}">
+      </div>
+    </div>
+    <div class="field">
+      <label for="kommentar">Kommentar (optional)</label>
+      <textarea id="kommentar" name="kommentar" rows="2"></textarea>
+    </div>
+    <button type="submit" class="btn">Eintrag speichern</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Eintragsliste</h2>
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Wohnung</th>
+          <th>Art</th>
+          <th>Tätigkeit</th>
+          <th>Datum</th>
+          <th>Datum Anerkennung</th>
+          <th class="num">Stunden</th>
+          <th class="num">Vergütung/h</th>
+          <th class="num">Summe Vergütung</th>
+          <th>Kommentar</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row['wohnung'] }}</td>
+          <td>{{ row['art'] }}</td>
+          <td>{{ row['taetigkeit'] }}</td>
+          <td>{{ row['datum'] }}</td>
+          <td>
+            {% if row['datum_anerkennung'] %}
+              <span class="badge badge-ok">{{ row['datum_anerkennung'] }}</span>
+            {% else %}
+              <span class="badge badge-pending">offen</span>
+            {% endif %}
+          </td>
+          <td class="num">{{ row['stunden']|stunden_fmt }}</td>
+          <td class="num">{{ row['verguetung_je_stunde']|euro }}</td>
+          <td class="num"><strong>{{ (row['stunden'] * row['verguetung_je_stunde'])|euro }}</strong></td>
+          <td>{{ row['kommentar'] or '' }}</td>
+          <td>
+            {% if not row['datum_anerkennung'] %}
+            <form method="post" action="{{ url_for('delete_entry', entry_id=row['id']) }}" class="inline-form"
+                  onsubmit="return confirm('Diesen Eintrag löschen?');">
+              <button type="submit" class="btn btn-danger btn-small">Löschen</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="5">Summe</th>
+          <th class="num">{{ totals['stunden']|stunden_fmt }}</th>
+          <th></th>
+          <th class="num">{{ totals['summe']|euro }}</th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Keine Einträge im gewählten Zeitraum.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const artTatigkeit = {{ art_tatigkeit|tojson }};
+  const artSelect = document.getElementById('art');
+  const tatSelect = document.getElementById('taetigkeit');
+  const sonstigesWrap = document.getElementById('taetigkeit-sonstiges-wrap');
+  const sonstigesInput = document.getElementById('taetigkeit_sonstiges');
+
+  function fillTaetigkeit() {
+    const art = artSelect.value;
+    tatSelect.innerHTML = '';
+    if (!art) {
+      tatSelect.innerHTML = '<option value="">– zuerst Art wählen –</option>';
+      sonstigesWrap.style.display = 'none';
+      sonstigesInput.required = false;
+      return;
+    }
+    tatSelect.innerHTML = '<option value="">– bitte wählen –</option>';
+    (artTatigkeit[art] || []).forEach(function (t) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      tatSelect.appendChild(opt);
+    });
+    const optOther = document.createElement('option');
+    optOther.value = '__sonstiges__';
+    optOther.textContent = 'Andere Tätigkeit…';
+    tatSelect.appendChild(optOther);
+  }
+
+  artSelect.addEventListener('change', function () {
+    fillTaetigkeit();
+    sonstigesWrap.style.display = 'none';
+    sonstigesInput.required = false;
+  });
+
+  tatSelect.addEventListener('change', function () {
+    if (tatSelect.value === '__sonstiges__') {
+      sonstigesWrap.style.display = 'block';
+      sonstigesInput.required = true;
+    } else {
+      sonstigesWrap.style.display = 'none';
+      sonstigesInput.required = false;
+    }
+  });
+</script>
+{% endblock %}

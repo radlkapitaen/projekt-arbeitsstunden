@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Registrieren – Selbsthilfe-Stunden{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h2>Registrieren</h2>
+  <p class="muted">Nach der Registrierung wird Ihr Konto von einem Administrator freigegeben.</p>
+  <form method="post">
+    <div class="field">
+      <label for="name">Name / Haushalt</label>
+      <input type="text" id="name" name="name" required autofocus>
+    </div>
+    <div class="field">
+      <label for="wohnung">Wohnung (optional)</label>
+      <input type="text" id="wohnung" name="wohnung" placeholder="z. B. N02">
+    </div>
+    <div class="field">
+      <label for="email">E-Mail</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="field">
+      <label for="password">Passwort</label>
+      <input type="password" id="password" name="password" minlength="6" required>
+    </div>
+    <div class="field">
+      <label for="password2">Passwort wiederholen</label>
+      <input type="password" id="password2" name="password2" minlength="6" required>
+    </div>
+    <button type="submit" class="btn">Konto anlegen</button>
+  </form>
+  <p class="muted">Bereits registriert? <a href="{{ url_for('login') }}">Anmelden</a></p>
+</div>
+{% endblock %}

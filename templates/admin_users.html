@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Nutzerverwaltung – Selbsthilfe-Stunden{% endblock %}
+{% block content %}
+<h1>Nutzerverwaltung</h1>
+
+<div class="card">
+  <h2>Registrierte Nutzer</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>E-Mail</th>
+          <th>Wohnung</th>
+          <th>Rolle</th>
+          <th>Status</th>
+          <th class="num">Einträge</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row['name'] }}</td>
+          <td>{{ row['email'] }}</td>
+          <td>{{ row['wohnung'] or '–' }}</td>
+          <td>
+            <span class="badge badge-role">{{ 'Admin' if row['role'] == 'admin' else 'Benutzer' }}</span>
+          </td>
+          <td>
+            {% if row['approved'] %}
+              <span class="badge badge-ok">zugelassen</span>
+            {% else %}
+              <span class="badge badge-pending">wartet auf Freigabe</span>
+            {% endif %}
+          </td>
+          <td class="num">{{ row['eintraege'] }}</td>
+          <td>
+            <div class="inline-form">
+              {% if row['approved'] %}
+              <form method="post" action="{{ url_for('block_user', user_id=row['id']) }}">
+                <button type="submit" class="btn btn-secondary btn-small">Sperren</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('approve_user', user_id=row['id']) }}">
+                <button type="submit" class="btn btn-success btn-small">Zulassen</button>
+              </form>
+              {% endif %}
+              <form method="post" action="{{ url_for('toggle_role', user_id=row['id']) }}">
+                <button type="submit" class="btn btn-small" title="Rolle wechseln">
+                  {{ 'Zum Benutzer machen' if row['role'] == 'admin' else 'Zum Admin machen' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
